@@ -1,13 +1,21 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
+import { Trash2, Plus, X } from "lucide-react";
 
-interface RawNote {
+interface User {
+  id: string;
+  email: string;
+  name: string;
+  dateOfBirth: string;
+}
+
+type RawNote = {
   _id: string;
   title?: string;
   content?: string;
   text?: string;
   createdAt?: string;
   updatedAt?: string;
-}
+};
 
 interface Note {
   _id: string;
@@ -17,40 +25,47 @@ interface Note {
   updatedAt?: string;
 }
 
-export default function Notes() {
+interface NotesProps {
+  user: User;
+  onLogout: () => void;
+}
+
+const API_BASE = "https://notetaking-backend-efiw.onrender.com";
+
+const normalizeNote = (n: RawNote): Note => ({
+  _id: n._id,
+  title: (n.title ?? "Untitled").trim() || "Untitled",
+  content: (n.content ?? n.text ?? "").toString(),
+  createdAt: n.createdAt ?? new Date().toISOString(),
+  updatedAt: n.updatedAt,
+});
+
+const Notes: React.FC<NotesProps> = ({ user, onLogout }) => {
   const [notes, setNotes] = useState<Note[]>([]);
+  const [title, setTitle] = useState("");
+  const [content, setContent] = useState("");
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [creating, setCreating] = useState(false);
+  const [selected, setSelected] = useState<Note | null>(null);
+  const [viewerOpen, setViewerOpen] = useState(false);
 
-  const [newTitle, setNewTitle] = useState("");
-  const [newContent, setNewContent] = useState("");
+  const hasNotes = useMemo(() => notes.length > 0, [notes]);
 
-  // ✅ Normalize raw backend data
-  const normalizeNote = (n: RawNote): Note => ({
-    _id: n._id,
-    title: (n.title ?? "Untitled").trim() || "Untitled",
-    content: (n.content ?? n.text ?? "").toString(),
-    createdAt: n.createdAt ?? new Date().toISOString(),
-    updatedAt: n.updatedAt,
-  });
-
-  // ✅ Fetch notes
+  
   const loadNotes = async () => {
     try {
       setLoading(true);
-      setError(null);
+      const res = await fetch(`${API_BASE}/notes`, { credentials: "include" });
+      const data = await res.json();
 
-      const res = await fetch("http://localhost:5000/notes", {
-        credentials: "include",
-      });
+      if (!res.ok || !Array.isArray(data)) {
+        throw new Error("Failed to load notes");
+      }
 
-      if (!res.ok) throw new Error("Failed to load notes");
-
-      const data: RawNote[] = await res.json();
       setNotes(data.map(normalizeNote));
-    } catch (err) {
-      console.error("Error loading notes:", err);
-      setError("Could not fetch notes. Please try again.");
+    } catch (e) {
+      console.error("Error loading notes:", e);
+      alert("Could not load notes. Please refresh.");
     } finally {
       setLoading(false);
     }
@@ -60,105 +75,245 @@ export default function Notes() {
     loadNotes();
   }, []);
 
-  // ✅ Create note
+  
   const createNote = async () => {
-    if (!newTitle.trim() && !newContent.trim()) return;
-
+    if (!title.trim() || !content.trim()) return;
+    setCreating(true);
     try {
-      setError(null);
-
-      const res = await fetch("http://localhost:5000/notes/createNote", {
+      const res = await fetch(`${API_BASE}/notes/createNote`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ title: newTitle, content: newContent }),
+        body: JSON.stringify({ title, content }),
       });
 
       const raw = await res.json();
-      console.log("Create response:", raw);
 
       if (!res.ok || !raw || !raw._id) {
-        throw new Error(raw.message || "Invalid response from server");
+        throw new Error("Invalid response from server");
       }
 
       setNotes((prev) => [normalizeNote(raw), ...prev]);
-      setNewTitle("");
-      setNewContent("");
-    } catch (err) {
-      console.error("Error creating note:", err);
-      setError("Failed to create note. Please try again.");
+      setTitle("");
+      setContent("");
+    } catch (e) {
+      console.error("Error creating note:", e);
+      alert("Failed to create note. Please try again.");
+    } finally {
+      setCreating(false);
     }
   };
 
-  // ✅ Delete note
-  const deleteNote = async (id: string) => {
-    try {
-      setError(null);
 
-      const res = await fetch(`http://localhost:5000/notes/${id}`, {
+  const deleteNote = async (id: string) => {
+    if (!window.confirm("Delete this note?")) return;
+    try {
+      const res = await fetch(`${API_BASE}/notes/${id}`, {
         method: "DELETE",
         credentials: "include",
       });
 
       if (!res.ok) throw new Error("Failed to delete note");
 
-      setNotes((prev) => prev.filter((note) => note._id !== id));
-    } catch (err) {
-      console.error("Error deleting note:", err);
-      setError("Failed to delete note.");
+      setNotes((prev) => prev.filter((n) => n._id !== id));
+      if (selected?._id === id) {
+        setViewerOpen(false);
+        setSelected(null);
+      }
+    } catch (e) {
+      console.error("Error deleting note:", e);
+      alert("Failed to delete note. Please try again.");
     }
   };
 
+  
+  const openViewer = (note: Note) => {
+    setSelected(note);
+    setViewerOpen(true);
+  };
+
+  const closeViewer = () => {
+    setViewerOpen(false);
+    setSelected(null);
+  };
+
   return (
-    <div className="p-6 max-w-2xl mx-auto">
-      <h1 className="text-2xl font-bold mb-4">My Notes</h1>
-
-      {/* Error */}
-      {error && <p className="text-red-500 mb-2">{error}</p>}
-
-      {/* Create Form */}
-      <div className="mb-4 space-y-2">
-        <input
-          className="border w-full p-2 rounded"
-          placeholder="Note title"
-          value={newTitle}
-          onChange={(e) => setNewTitle(e.target.value)}
-        />
-        <textarea
-          className="border w-full p-2 rounded"
-          placeholder="Note content"
-          value={newContent}
-          onChange={(e) => setNewContent(e.target.value)}
-        />
-        <button
-          onClick={createNote}
-          className="bg-blue-500 text-white px-4 py-2 rounded"
-        >
-          Add Note
+    <div className="h-screen flex flex-col p-6 max-w-3xl mx-auto">
+      
+      <div className="flex justify-between items-center mb-6">
+        <div className="flex items-center space-x-2">
+          <div className="w-8 h-8 rounded-full flex items-center justify-center">
+            <img
+              src="/Logo.png"
+              alt="Logo"
+              className="w-6 h-6 bg-white rounded-full"
+            />
+          </div>
+          <span className="font-bold text-xl">Dashboard</span>
+        </div>
+        <button className="text-blue-600 hover:underline" onClick={onLogout}>
+          Sign Out
         </button>
       </div>
 
-      {/* Notes List */}
-      {loading ? (
-        <p>Loading notes...</p>
-      ) : notes.length === 0 ? (
-        <p>No notes yet.</p>
-      ) : (
-        <ul className="space-y-2">
-          {notes.map((note) => (
-            <li key={note._id} className="border p-3 rounded shadow-sm">
-              <h2 className="font-semibold">{note.title}</h2>
-              <p className="text-gray-700">{note.content}</p>
+   
+      <div className="bg-white shadow rounded-lg p-4 mb-5">
+        <h2 className="font-semibold text-gray-800">Welcome, {user.name}!</h2>
+        <p className="text-gray-500 text-sm">Email: {user.email}</p>
+      </div>
+
+     
+      <div className="mb-6">
+        <div className="space-y-2">
+          <input
+            type="text"
+            placeholder="Note title..."
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && createNote()}
+            className="w-full border px-3 py-2 rounded-lg"
+          />
+          <textarea
+            placeholder="Note content..."
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+            rows={3}
+            className="w-full border px-3 py-2 rounded-lg resize-y"
+          />
+          <button
+            onClick={createNote}
+            disabled={creating || !title.trim() || !content.trim()}
+            className="w-full bg-blue-500 text-white py-2 rounded-lg flex items-center justify-center gap-2 disabled:opacity-50"
+          >
+            <Plus size={18} />
+            {creating ? "Creating..." : "Create Note"}
+          </button>
+        </div>
+      </div>
+
+      
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="text-lg font-semibold">Notes ({notes.length})</h3>
+        <button
+          onClick={loadNotes}
+          className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+        >
+          Refresh
+        </button>
+      </div>
+
+      <div className="flex-1 overflow-y-auto space-y-3">
+        {loading ? (
+          <div className="flex items-center justify-center py-12 text-gray-600">
+            Loading notes...
+          </div>
+        ) : !hasNotes ? (
+          <div className="bg-white rounded-lg shadow p-8 text-center text-gray-600">
+            No notes yet. Create your first note above.
+          </div>
+        ) : (
+          notes.map((note) => (
+            <button
+              key={note._id}
+              onClick={() => openViewer(note)}
+              className="w-full text-left bg-white rounded-lg shadow p-4 hover:shadow-md transition-shadow group"
+            >
+              <div className="flex items-start justify-between">
+                <div className="pr-3">
+                  <h4 className="font-medium text-gray-900">{note.title}</h4>
+                  <p className="text-gray-600 text-sm line-clamp-2 whitespace-pre-wrap">
+                    {note.content}
+                  </p>
+                </div>
+                <div
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    deleteNote(note._id);
+                  }}
+                  title="Delete note"
+                  className="text-red-500 hover:text-red-700 p-2 rounded-lg"
+                >
+                  <Trash2 size={18} />
+                </div>
+              </div>
+              <div className="mt-2 text-xs text-gray-500">
+                {new Date(note.createdAt).toLocaleDateString()} •{" "}
+                {new Date(note.createdAt).toLocaleTimeString()}
+              </div>
+            </button>
+          ))
+        )}
+      </div>
+
+     
+      {viewerOpen && selected && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center"
+          role="dialog"
+          aria-modal="true"
+        >
+          
+          <div className="absolute inset-0 bg-black/40" onClick={closeViewer} />
+
+        
+          <div className="relative z-10 w-[92vw] max-w-2xl max-h-[85vh] overflow-hidden rounded-2xl bg-white shadow-2xl">
+            <div className="flex items-center justify-between border-b px-5 py-3">
+              <h3 className="font-semibold text-gray-900 truncate pr-4">
+                {selected.title}
+              </h3>
               <button
-                onClick={() => deleteNote(note._id)}
-                className="text-red-500 mt-2"
+                onClick={closeViewer}
+                className="p-2 rounded-lg hover:bg-gray-100"
+                aria-label="Close"
               >
+                <X size={18} />
+              </button>
+            </div>
+            <div className="px-5 py-4 overflow-auto">
+              <div className="text-xs text-gray-500 mb-3">
+                Created: {new Date(selected.createdAt).toLocaleString()}
+                {selected.updatedAt ? (
+                  <> • Updated: {new Date(selected.updatedAt).toLocaleString()}</>
+                ) : null}
+              </div>
+              <div className="whitespace-pre-wrap leading-relaxed text-gray-800">
+                {selected.content}
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 border-t px-5 py-3">
+              <button
+                onClick={() => {
+                  const id = selected._id; // save before closing
+                  closeViewer();
+                  deleteNote(id);
+                }}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-white bg-red-500 hover:bg-red-600"
+              >
+                <Trash2 size={16} />
                 Delete
               </button>
-            </li>
-          ))}
-        </ul>
+              <button
+                onClick={closeViewer}
+                className="px-4 py-2 rounded-lg border hover:bg-gray-50"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
       )}
+
+     
+      <style>{`
+        .line-clamp-2 {
+          display: -webkit-box;
+          -webkit-line-clamp: 2;
+          -webkit-box-orient: vertical;
+          overflow: hidden;
+        }
+      `}</style>
     </div>
   );
-}
+};
+
+export default Notes;
