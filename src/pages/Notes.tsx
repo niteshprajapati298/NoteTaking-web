@@ -30,7 +30,7 @@ interface NotesProps {
   onLogout: () => void;
 }
 
-const API_BASE = "http://localhost:5000";
+const API_BASE = "https://notetaking-backend-efiw.onrender.com";
 
 
 const normalizeNote = (n: RawNote): Note => ({

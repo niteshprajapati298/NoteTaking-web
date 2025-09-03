@@ -9,7 +9,7 @@ interface User {
   dateOfBirth: string;
 }
 
-const API_BASE = "http://localhost:5000";
+const API_BASE = "https://notetaking-backend-efiw.onrender.com";
 
 const App = () => {
   const [user, setUser] = useState<User | null>(null);

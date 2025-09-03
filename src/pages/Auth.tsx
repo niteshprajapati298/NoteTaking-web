@@ -12,7 +12,7 @@ interface AuthProps {
   onAuthSuccess: (user: User) => void;
 }
 
-const API_BASE = "http://localhost:5000";
+const API_BASE = "https://notetaking-backend-efiw.onrender.com";
 
 const Auth: React.FC<AuthProps> = ({ onAuthSuccess }) => {
   const [mode, setMode] = useState<"signup" | "login">("signup");
