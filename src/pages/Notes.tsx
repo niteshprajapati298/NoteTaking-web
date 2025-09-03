@@ -153,7 +153,7 @@ const Notes: React.FC<NotesProps> = ({ user, onLogout }) => {
       {/* message bar */}
       {message && (
         <div
-          className={`mb-4 p-3 rounded-lg text-white text-sm ${
+          className={`mb-4 p-3 rounded-lg text-white text-sm duration-1000 ${
             message.type === "success" ? "bg-green-500" : "bg-red-500"
           }`}
         >
@@ -169,7 +169,7 @@ const Notes: React.FC<NotesProps> = ({ user, onLogout }) => {
           </div>
           <span className="font-bold text-xl">Dashboard</span>
         </div>
-        <button className="text-blue-600 hover:underline" onClick={onLogout}>
+        <button className="text-blue-600 hover:underline cursor-pointer" onClick={onLogout}>
           Sign Out
         </button>
       </div>
@@ -201,7 +201,7 @@ const Notes: React.FC<NotesProps> = ({ user, onLogout }) => {
           <button
             onClick={createNote}
             disabled={creating || !title.trim() || !content.trim()}
-            className="w-full bg-blue-500 text-white py-2 rounded-lg flex items-center justify-center gap-2 disabled:opacity-50"
+            className="w-full bg-blue-500 text-white py-2 rounded-lg flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
           >
             <Plus size={18} />
             {creating ? "Creating..." : "Create Note"}
@@ -214,7 +214,7 @@ const Notes: React.FC<NotesProps> = ({ user, onLogout }) => {
         <h3 className="text-lg font-semibold">Notes ({notes.length})</h3>
         <button
           onClick={loadNotes}
-          className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+          className="text-blue-600 hover:text-blue-800 text-sm font-medium cursor-pointer"
         >
           Refresh
         </button>
@@ -234,7 +234,7 @@ const Notes: React.FC<NotesProps> = ({ user, onLogout }) => {
             <button
               key={note._id}
               onClick={() => openViewer(note)}
-              className="w-full text-left bg-white rounded-lg shadow p-4 hover:shadow-md transition-shadow group"
+              className="w-full text-left bg-white rounded-lg shadow p-4 hover:shadow-md transition-shadow group cursor-pointer"
             >
               <div className="flex items-start justify-between">
                 <div className="pr-3">
@@ -249,7 +249,7 @@ const Notes: React.FC<NotesProps> = ({ user, onLogout }) => {
                     confirmDelete(note);
                   }}
                   title="Delete note"
-                  className="text-red-500 hover:text-red-700 p-2 rounded-lg"
+                  className="text-red-500 hover:text-red-700 p-2 rounded-lg cursor-pointer"
                 >
                   <Trash2 size={18} />
                 </div>
@@ -266,7 +266,7 @@ const Notes: React.FC<NotesProps> = ({ user, onLogout }) => {
       {/* note viewer */}
       {viewerOpen && selected && (
         <div className="fixed inset-0 z-50 flex items-center justify-center" role="dialog" aria-modal="true">
-          <div className="absolute inset-0 bg-black/40" onClick={closeViewer} />
+          <div className="absolute inset-0 bg-black/40 cursor-pointer" onClick={closeViewer} />
           <div className="relative z-10 w-[92vw] max-w-2xl max-h-[85vh] overflow-hidden rounded-2xl bg-white shadow-2xl">
             <div className="flex items-center justify-between border-b px-5 py-3">
               <h3 className="font-semibold text-gray-900 truncate pr-4">
@@ -274,7 +274,7 @@ const Notes: React.FC<NotesProps> = ({ user, onLogout }) => {
               </h3>
               <button
                 onClick={closeViewer}
-                className="p-2 rounded-lg hover:bg-gray-100"
+                className="p-2 rounded-lg hover:bg-gray-100 cursor-pointer"
                 aria-label="Close"
               >
                 <X size={18} />
@@ -294,14 +294,14 @@ const Notes: React.FC<NotesProps> = ({ user, onLogout }) => {
             <div className="flex justify-end gap-2 border-t px-5 py-3">
               <button
                 onClick={() => confirmDelete(selected)}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-white bg-red-500 hover:bg-red-600"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-white bg-red-500 hover:bg-red-600 cursor-pointer"
               >
                 <Trash2 size={16} />
                 Delete
               </button>
               <button
                 onClick={closeViewer}
-                className="px-4 py-2 rounded-lg border hover:bg-gray-50"
+                className="px-4 py-2 rounded-lg border hover:bg-gray-50 cursor-pointer"
               >
                 Close
               </button>
@@ -320,13 +320,13 @@ const Notes: React.FC<NotesProps> = ({ user, onLogout }) => {
             <div className="flex justify-end gap-3">
               <button
                 onClick={() => setDeleteConfirm(null)}
-                className="px-4 py-2 rounded-lg border hover:bg-gray-50"
+                className="px-4 py-2 rounded-lg border hover:bg-gray-50 cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 onClick={() => deleteNote(deleteConfirm._id)}
-                className="px-4 py-2 rounded-lg bg-red-500 text-white hover:bg-red-600"
+                className="px-4 py-2 rounded-lg bg-red-500 text-white hover:bg-red-600 cursor-pointer"
               >
                 Delete
               </button>

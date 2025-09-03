@@ -117,7 +117,7 @@ const Auth: React.FC<AuthProps> = ({ onAuthSuccess }) => {
               <div
                 className={`p-3 mb-4 rounded-lg text-sm ${
                   messageType === "success"
-                    ? "bg-green-100 text-green-700"
+                    ? "bg-green-100 text-green-700 "
                     : "bg-red-100 text-red-700"
                 }`}
               >
@@ -205,7 +205,7 @@ const Auth: React.FC<AuthProps> = ({ onAuthSuccess }) => {
                   <button
                     type="button"
                     onClick={() => setShowOtp(!showOtp)}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 cursor-pointer"
                   >
                     {showOtp ? <EyeOff size={20} /> : <Eye size={20} />}
                   </button>
