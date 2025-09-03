@@ -1,5 +1,7 @@
 import React, { useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
+import BackgroundImg from "../assets/BackgroundImg.jpg";
+import LogoImg from "../assets/Logo.png";
 
 interface User {
   id: string;
@@ -78,7 +80,7 @@ const Auth: React.FC<AuthProps> = ({ onAuthSuccess }) => {
         
         <div className="hidden lg:flex items-center mb-8">
           
-          <img src="src/assets/Logo.png" alt="logo" className="h-8 w-8 mr-2" />
+          <img src={LogoImg} alt="logo" className="h-8 w-8 mr-2" />
           <span className="font-bold text-xl">HD</span>
         </div>
 
@@ -86,7 +88,7 @@ const Auth: React.FC<AuthProps> = ({ onAuthSuccess }) => {
           <div className="w-full max-w-sm">
             
             <div className="flex lg:hidden justify-center items-center mb-8 gap-2 cursor-pointer">
-              <img src="src/assets/Logo.png" alt="logo" className="h-6 w-6" />
+              <img src={LogoImg} alt="logo" className="h-6 w-6" />
               <span className="font-bold text-xl">HD</span>
             </div>
 
@@ -190,11 +192,12 @@ const Auth: React.FC<AuthProps> = ({ onAuthSuccess }) => {
       
       <div className="hidden lg:flex flex-1">
         <img
-          src="src/assets/BackgroundImg.jpg"
+          src={BackgroundImg}
           alt="side"
           className="w-full h-full object-cover rounded-l-2xl"
         />
       </div>
+      
     </div>
   );
 };

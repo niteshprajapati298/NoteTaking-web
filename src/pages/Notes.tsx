@@ -1,5 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Trash2, Plus, X } from "lucide-react";
+import LogoImg from "../assets/Logo.png";
+
 
 interface User {
   id: string;
@@ -132,7 +134,7 @@ const Notes: React.FC<NotesProps> = ({ user, onLogout }) => {
       <div className="flex justify-between items-center mb-6">
         <div className="flex items-center space-x-2">
           <div className="w-8 h-8  rounded-full flex items-center justify-center">
-            <img src="src/assets/Logo.png" alt="" className="w-6 h-6 bg-white rounded-full" />
+            <img src={LogoImg} alt="" className="w-6 h-6 bg-white rounded-full" />
           </div>
           <span className="font-bold text-xl">Dashboard</span>
         </div>
