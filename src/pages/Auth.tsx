@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
 
-
 interface User {
   id: string;
   email: string;
@@ -25,71 +24,106 @@ const Auth: React.FC<AuthProps> = ({ onAuthSuccess }) => {
   const [otp, setOtp] = useState("");
   const [showOtp, setShowOtp] = useState(false);
 
-  const [sendingOtp, setSendingOtp] = useState(false); // <--- new state
+  const [sendingOtp, setSendingOtp] = useState(false);
+
+  // 👇 new states for messages
+  const [message, setMessage] = useState<string | null>(null);
+  const [messageType, setMessageType] = useState<"success" | "error" | null>(null);
 
   const sendOtp = async () => {
-    if (sendingOtp) return; 
+    if (sendingOtp) return;
     setSendingOtp(true);
+    setMessage(null);
 
     try {
-      if (mode === "signup") {
-        await fetch(`${API_BASE}/auth/send-signup-otp`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-          body: JSON.stringify({ email, name, dateOfBirth: dob }),
-        });
+      const endpoint =
+        mode === "signup" ? "/auth/send-signup-otp" : "/auth/send-otp";
+
+      const res = await fetch(`${API_BASE}${endpoint}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body:
+          mode === "signup"
+            ? JSON.stringify({ email, name, dateOfBirth: dob })
+            : JSON.stringify({ email }),
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        setStep("otp");
+        setMessage("OTP sent successfully!");
+        setMessageType("success");
       } else {
-        await fetch(`${API_BASE}/auth/send-otp`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-          body: JSON.stringify({ email }),
-        });
+        setMessage(data.error || "Failed to send OTP");
+        setMessageType("error");
       }
-      setStep("otp");
     } catch (err) {
-      console.error("Failed to send OTP", err);
+      setMessage("Something went wrong while sending OTP.");
+      setMessageType("error");
     } finally {
       setSendingOtp(false);
     }
   };
 
   const verifyOtp = async () => {
-    const endpoint =
-      mode === "signup" ? "/auth/verify-signup-otp" : "/auth/verify-login-otp";
+    setMessage(null);
 
-    const res = await fetch(`${API_BASE}${endpoint}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-      body: JSON.stringify({ email, code: otp,name }),
-    });
+    try {
+      const endpoint =
+        mode === "signup" ? "/auth/verify-signup-otp" : "/auth/verify-login-otp";
 
-    const data = await res.json();
-    if (res.ok) {
-      onAuthSuccess(data.user);
+      const res = await fetch(`${API_BASE}${endpoint}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ email, code: otp, name }),
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        setMessage("Login successful!");
+        setMessageType("success");
+        onAuthSuccess(data.user);
+      } else {
+        setMessage(data.error || "Invalid OTP");
+        setMessageType("error");
+      }
+    } catch (err) {
+      setMessage("Something went wrong while verifying OTP.");
+      setMessageType("error");
     }
   };
 
   return (
     <div className="h-screen p-2 flex flex-col lg:flex-row">
-     
       <div className="flex-1 flex flex-col p-6">
-        
         <div className="hidden lg:flex items-center mb-8">
-          
-          <img src='/Logo.png' alt="logo" className="h-8 w-8 mr-2" />
+          <img src="/Logo.png" alt="logo" className="h-8 w-8 mr-2" />
           <span className="font-bold text-xl">HD</span>
         </div>
 
         <div className="flex-1 flex items-center justify-center">
           <div className="w-full max-w-sm">
-            
             <div className="flex lg:hidden justify-center items-center mb-8 gap-2 cursor-pointer">
-              <img src='/Logo.png' alt="logo" className="h-6 w-6" />
+              <img src="/Logo.png" alt="logo" className="h-6 w-6" />
               <span className="font-bold text-xl">HD</span>
             </div>
+
+            {/* ✅ show messages */}
+            {message && (
+              <div
+                className={`p-3 mb-4 rounded-lg text-sm ${
+                  messageType === "success"
+                    ? "bg-green-100 text-green-700"
+                    : "bg-red-100 text-red-700"
+                }`}
+              >
+                {message}
+              </div>
+            )}
 
             {step === "form" && (
               <div className="space-y-4">
@@ -188,15 +222,13 @@ const Auth: React.FC<AuthProps> = ({ onAuthSuccess }) => {
         </div>
       </div>
 
-      
       <div className="hidden lg:flex flex-1">
         <img
-          src='/BackgroundImg.jpg'
+          src="/BackgroundImg.jpg"
           alt="side"
           className="w-full h-full object-cover rounded-l-2xl"
         />
       </div>
-      
     </div>
   );
 };

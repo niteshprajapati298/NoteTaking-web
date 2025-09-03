@@ -49,9 +49,16 @@ const Notes: React.FC<NotesProps> = ({ user, onLogout }) => {
   const [selected, setSelected] = useState<Note | null>(null);
   const [viewerOpen, setViewerOpen] = useState(false);
 
+  const [message, setMessage] = useState<{ text: string; type: "success" | "error" } | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<Note | null>(null);
+
   const hasNotes = useMemo(() => notes.length > 0, [notes]);
 
-  
+  const showMessage = (text: string, type: "success" | "error" = "success") => {
+    setMessage({ text, type });
+    setTimeout(() => setMessage(null), 3000);
+  };
+
   const loadNotes = async () => {
     try {
       setLoading(true);
@@ -65,7 +72,7 @@ const Notes: React.FC<NotesProps> = ({ user, onLogout }) => {
       setNotes(data.map(normalizeNote));
     } catch (e) {
       console.error("Error loading notes:", e);
-      alert("Could not load notes. Please refresh.");
+      showMessage("Could not load notes. Please refresh.", "error");
     } finally {
       setLoading(false);
     }
@@ -75,7 +82,6 @@ const Notes: React.FC<NotesProps> = ({ user, onLogout }) => {
     loadNotes();
   }, []);
 
-  
   const createNote = async () => {
     if (!title.trim() || !content.trim()) return;
     setCreating(true);
@@ -96,17 +102,20 @@ const Notes: React.FC<NotesProps> = ({ user, onLogout }) => {
       setNotes((prev) => [normalizeNote(raw), ...prev]);
       setTitle("");
       setContent("");
+      showMessage("Note created successfully!");
     } catch (e) {
       console.error("Error creating note:", e);
-      alert("Failed to create note. Please try again.");
+      showMessage("Failed to create note.", "error");
     } finally {
       setCreating(false);
     }
   };
 
+  const confirmDelete = (note: Note) => {
+    setDeleteConfirm(note);
+  };
 
   const deleteNote = async (id: string) => {
-    if (!window.confirm("Delete this note?")) return;
     try {
       const res = await fetch(`${API_BASE}/notes/${id}`, {
         method: "DELETE",
@@ -120,13 +129,15 @@ const Notes: React.FC<NotesProps> = ({ user, onLogout }) => {
         setViewerOpen(false);
         setSelected(null);
       }
+      showMessage("Note deleted successfully!");
     } catch (e) {
       console.error("Error deleting note:", e);
-      alert("Failed to delete note. Please try again.");
+      showMessage("Failed to delete note.", "error");
+    } finally {
+      setDeleteConfirm(null);
     }
   };
 
-  
   const openViewer = (note: Note) => {
     setSelected(note);
     setViewerOpen(true);
@@ -139,15 +150,22 @@ const Notes: React.FC<NotesProps> = ({ user, onLogout }) => {
 
   return (
     <div className="h-screen flex flex-col p-6 max-w-3xl mx-auto">
-      
+      {/* message bar */}
+      {message && (
+        <div
+          className={`mb-4 p-3 rounded-lg text-white text-sm ${
+            message.type === "success" ? "bg-green-500" : "bg-red-500"
+          }`}
+        >
+          {message.text}
+        </div>
+      )}
+
+      {/* header */}
       <div className="flex justify-between items-center mb-6">
         <div className="flex items-center space-x-2">
           <div className="w-8 h-8 rounded-full flex items-center justify-center">
-            <img
-              src="/Logo.png"
-              alt="Logo"
-              className="w-6 h-6 bg-white rounded-full"
-            />
+            <img src="/Logo.png" alt="Logo" className="w-6 h-6 bg-white rounded-full" />
           </div>
           <span className="font-bold text-xl">Dashboard</span>
         </div>
@@ -156,13 +174,13 @@ const Notes: React.FC<NotesProps> = ({ user, onLogout }) => {
         </button>
       </div>
 
-   
+      {/* user info */}
       <div className="bg-white shadow rounded-lg p-4 mb-5">
         <h2 className="font-semibold text-gray-800">Welcome, {user.name}!</h2>
         <p className="text-gray-500 text-sm">Email: {user.email}</p>
       </div>
 
-     
+      {/* create note */}
       <div className="mb-6">
         <div className="space-y-2">
           <input
@@ -191,7 +209,7 @@ const Notes: React.FC<NotesProps> = ({ user, onLogout }) => {
         </div>
       </div>
 
-      
+      {/* notes list */}
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-lg font-semibold">Notes ({notes.length})</h3>
         <button
@@ -228,7 +246,7 @@ const Notes: React.FC<NotesProps> = ({ user, onLogout }) => {
                 <div
                   onClick={(e) => {
                     e.stopPropagation();
-                    deleteNote(note._id);
+                    confirmDelete(note);
                   }}
                   title="Delete note"
                   className="text-red-500 hover:text-red-700 p-2 rounded-lg"
@@ -245,17 +263,10 @@ const Notes: React.FC<NotesProps> = ({ user, onLogout }) => {
         )}
       </div>
 
-     
+      {/* note viewer */}
       {viewerOpen && selected && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center"
-          role="dialog"
-          aria-modal="true"
-        >
-          
+        <div className="fixed inset-0 z-50 flex items-center justify-center" role="dialog" aria-modal="true">
           <div className="absolute inset-0 bg-black/40" onClick={closeViewer} />
-
-        
           <div className="relative z-10 w-[92vw] max-w-2xl max-h-[85vh] overflow-hidden rounded-2xl bg-white shadow-2xl">
             <div className="flex items-center justify-between border-b px-5 py-3">
               <h3 className="font-semibold text-gray-900 truncate pr-4">
@@ -282,11 +293,7 @@ const Notes: React.FC<NotesProps> = ({ user, onLogout }) => {
             </div>
             <div className="flex justify-end gap-2 border-t px-5 py-3">
               <button
-                onClick={() => {
-                  const id = selected._id; // save before closing
-                  closeViewer();
-                  deleteNote(id);
-                }}
+                onClick={() => confirmDelete(selected)}
                 className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-white bg-red-500 hover:bg-red-600"
               >
                 <Trash2 size={16} />
@@ -303,7 +310,31 @@ const Notes: React.FC<NotesProps> = ({ user, onLogout }) => {
         </div>
       )}
 
-     
+      {/* delete confirm modal */}
+      {deleteConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setDeleteConfirm(null)} />
+          <div className="relative z-10 bg-white rounded-lg p-6 shadow-lg max-w-sm w-full">
+            <h3 className="text-lg font-semibold mb-4">Delete Note?</h3>
+            <p className="text-gray-600 mb-6">Are you sure you want to delete “{deleteConfirm.title}”?</p>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setDeleteConfirm(null)}
+                className="px-4 py-2 rounded-lg border hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => deleteNote(deleteConfirm._id)}
+                className="px-4 py-2 rounded-lg bg-red-500 text-white hover:bg-red-600"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <style>{`
         .line-clamp-2 {
           display: -webkit-box;
