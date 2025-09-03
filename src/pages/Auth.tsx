@@ -63,7 +63,7 @@ const Auth: React.FC<AuthProps> = ({ onAuthSuccess }) => {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
-      body: JSON.stringify({ email, code: otp }),
+      body: JSON.stringify({ email, code: otp,name }),
     });
 
     const data = await res.json();
