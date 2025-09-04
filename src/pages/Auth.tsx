@@ -142,7 +142,7 @@ const Auth: React.FC<AuthProps> = ({ onAuthSuccess }) => {
                     <input
                      
                       type="date"
-                      placeholder="DateOfBirth"
+                      placeholder="DD/MM/YYYY"
                       value={dob}
                       onChange={(e) => setDob(e.target.value)}
                       className="w-full px-4 py-3 border rounded-lg cursor-pointer"
