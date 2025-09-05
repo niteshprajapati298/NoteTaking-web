@@ -54,7 +54,7 @@ const App = () => {
   if (loading) {
     return (
       <div className="h-screen flex items-center justify-center text-lg text-gray-600">
-        Loading...
+        Loading Please Wait It Can Take some Time...
       </div>
     );
   }
